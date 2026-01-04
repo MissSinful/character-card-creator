@@ -50,10 +50,13 @@ export function useCharacterCard(options = {}) {
 
   // Main card data (the output)
   const [card, setCard] = useState(emptyCard);
-  
+
+  // Character image (data URL)
+  const [imageDataUrl, setImageDataUrl] = useState(null);
+
   // Basics form data (the input)
   const [basics, setBasics] = useState(emptyBasics);
-  
+
   // Track if there are unsaved changes
   const [isDirty, setIsDirty] = useState(false);
 
@@ -63,9 +66,10 @@ export function useCharacterCard(options = {}) {
       try {
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
-          const { card: savedCard, basics: savedBasics } = JSON.parse(saved);
+          const { card: savedCard, basics: savedBasics, image: savedImage } = JSON.parse(saved);
           if (savedCard) setCard(savedCard);
           if (savedBasics) setBasics(savedBasics);
+          if (savedImage) setImageDataUrl(savedImage);
         }
       } catch (e) {
         console.warn('Failed to load draft from localStorage:', e);
@@ -77,12 +81,12 @@ export function useCharacterCard(options = {}) {
   useEffect(() => {
     if (autosave && isDirty) {
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ card, basics }));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ card, basics, image: imageDataUrl }));
       } catch (e) {
         console.warn('Failed to save draft to localStorage:', e);
       }
     }
-  }, [card, basics, isDirty, autosave]);
+  }, [card, basics, imageDataUrl, isDirty, autosave]);
 
   /**
    * Update a single card field
@@ -110,9 +114,14 @@ export function useCharacterCard(options = {}) {
 
   /**
    * Load a complete card (from import)
+   * @param {Object} cardData - Card fields
+   * @param {string|null} image - Optional image data URL
    */
-  const loadCard = useCallback((cardData) => {
+  const loadCard = useCallback((cardData, image = null) => {
     setCard({ ...emptyCard, ...cardData });
+    if (image) {
+      setImageDataUrl(image);
+    }
     // Also populate basics from card if possible
     setBasics(prev => ({
       ...prev,
@@ -132,12 +141,21 @@ export function useCharacterCard(options = {}) {
     }
     setCard(emptyCard);
     setBasics(emptyBasics);
+    setImageDataUrl(null);
     setIsDirty(false);
     if (autosave) {
       localStorage.removeItem(STORAGE_KEY);
     }
     return true;
   }, [isDirty, autosave]);
+
+  /**
+   * Update character image
+   */
+  const setImage = useCallback((dataUrl) => {
+    setImageDataUrl(dataUrl);
+    setIsDirty(true);
+  }, []);
 
   /**
    * Add an alternate greeting
@@ -218,26 +236,30 @@ export function useCharacterCard(options = {}) {
     card,
     basics,
     isDirty,
-    
+    imageDataUrl,
+
     // Card actions
     updateCard,
     updateCardMultiple,
     loadCard,
     reset,
-    
+
     // Basics actions
     updateBasics,
-    
+
+    // Image actions
+    setImage,
+
     // Alt greetings actions
     addAltGreeting,
     updateAltGreeting,
     removeAltGreeting,
-    
+
     // Tags actions
     addTag,
     removeTag,
     setTags,
-    
+
     // Misc
     markSaved,
   };

@@ -2,6 +2,8 @@
  * Import/parse functions for character cards
  */
 
+import { extractCardFromPNG, loadImageAsDataURL } from './png';
+
 /**
  * Parse a character card JSON file
  * Handles both v1 and v2 formats
@@ -79,43 +81,74 @@ function normalizeV1Card(data) {
 
 /**
  * Read a File object and parse as character card
+ * Supports both JSON and PNG formats
  * @param {File} file - File object from input
- * @returns {Promise<Object>} Parsed card data
+ * @returns {Promise<{card: Object, imageDataUrl?: string}>} Parsed card data and optional image
  */
-export function readCardFile(file) {
+export async function readCardFile(file) {
+  const fileName = file.name.toLowerCase();
+
+  // Handle PNG files
+  if (fileName.endsWith('.png') || file.type === 'image/png') {
+    return readCardFromPNG(file);
+  }
+
+  // Handle JSON files
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    
+
     reader.onload = (event) => {
       try {
         const result = parseCharaCard(event.target.result);
-        resolve(result);
+        resolve({ card: result, imageDataUrl: null });
       } catch (error) {
         reject(new Error(`Failed to parse character card: ${error.message}`));
       }
     };
-    
+
     reader.onerror = () => {
       reject(new Error('Failed to read file'));
     };
-    
+
     reader.readAsText(file);
   });
 }
 
 /**
- * Extract card data from PNG file (future)
+ * Extract card data from PNG file
  * @param {File} file - PNG file
- * @returns {Promise<Object>} Parsed card data
+ * @returns {Promise<{card: Object, imageDataUrl: string}>} Parsed card data and image
  */
 export async function readCardFromPNG(file) {
-  // TODO: Implement PNG parsing
-  // 1. Read file as ArrayBuffer
-  // 2. Parse PNG chunks
-  // 3. Find tEXt chunk with 'chara' keyword
-  // 4. Base64 decode the value
-  // 5. Parse as JSON
-  throw new Error('PNG import not yet implemented');
+  // Read file as ArrayBuffer for PNG parsing
+  const buffer = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => resolve(e.target.result);
+    reader.onerror = () => reject(new Error('Failed to read PNG file'));
+    reader.readAsArrayBuffer(file);
+  });
+
+  // Extract card data from PNG
+  const rawData = extractCardFromPNG(buffer);
+
+  if (!rawData) {
+    throw new Error('No character data found in PNG. Is this a character card?');
+  }
+
+  // Normalize the card data
+  let card;
+  if (rawData.spec === 'chara_card_v2' && rawData.data) {
+    card = normalizeV2Card(rawData.data);
+  } else if (rawData.data) {
+    card = normalizeV1Card(rawData.data);
+  } else {
+    card = normalizeV1Card(rawData);
+  }
+
+  // Also get the image as data URL for display
+  const imageDataUrl = await loadImageAsDataURL(file);
+
+  return { card, imageDataUrl };
 }
 
 export default {

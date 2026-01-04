@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useCharacterCard } from '../hooks/useCharacterCard';
 import { useAIGeneration } from '../hooks/useAIGeneration';
-import { downloadAsJSON } from '../lib/export';
+import { downloadAsJSON, downloadAsPNG } from '../lib/export';
 import { readCardFile } from '../lib/import';
 import { hasApiKey } from '../lib/ai';
 
@@ -13,6 +13,7 @@ import AltGreetingsEditor from './AltGreetingsEditor';
 import AdvancedOptions from './AdvancedOptions';
 import AISettings from './AISettings';
 import GeneratingOverlay from './GeneratingOverlay';
+import ImageUpload from './ImageUpload';
 
 /**
  * Tab configuration
@@ -38,6 +39,7 @@ export default function App() {
     card,
     basics,
     isDirty,
+    imageDataUrl,
     updateCard,
     updateBasics,
     loadCard,
@@ -46,6 +48,7 @@ export default function App() {
     removeTag,
     removeAltGreeting,
     updateAltGreeting,
+    setImage,
   } = cardState;
 
   // AI generation
@@ -64,15 +67,15 @@ export default function App() {
   } = ai;
 
   /**
-   * Handle file import
+   * Handle file import (JSON or PNG)
    */
   const handleImport = async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
     try {
-      const cardData = await readCardFile(file);
-      loadCard(cardData);
+      const { card: cardData, imageDataUrl: importedImage } = await readCardFile(file);
+      loadCard(cardData, importedImage);
       setActiveTab('description');
     } catch (err) {
       alert(`Import failed: ${err.message}`);
@@ -83,11 +86,23 @@ export default function App() {
   };
 
   /**
-   * Handle export
+   * Handle JSON export
    */
-  const handleExport = () => {
+  const handleExportJSON = () => {
     downloadAsJSON(card);
     cardState.markSaved();
+  };
+
+  /**
+   * Handle PNG export
+   */
+  const handleExportPNG = async () => {
+    try {
+      await downloadAsPNG(card, imageDataUrl);
+      cardState.markSaved();
+    } catch (err) {
+      alert(`PNG export failed: ${err.message}`);
+    }
   };
 
   /**
@@ -107,12 +122,20 @@ export default function App() {
     switch (activeTab) {
       case 'basics':
         return (
-          <BasicsForm
-            basics={basics}
-            updateBasics={updateBasics}
-            onGenerate={handleGenerateDescription}
-            isLoading={loading.description}
-          />
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr,200px] gap-6">
+            <BasicsForm
+              basics={basics}
+              updateBasics={updateBasics}
+              onGenerate={handleGenerateDescription}
+              isLoading={loading.description}
+            />
+            <div className="lg:order-first">
+              <ImageUpload
+                imageDataUrl={imageDataUrl}
+                onImageChange={setImage}
+              />
+            </div>
+          </div>
         );
 
       case 'description':
@@ -199,17 +222,24 @@ export default function App() {
               Import
               <input
                 type="file"
-                accept=".json"
+                accept=".json,.png,image/png"
                 onChange={handleImport}
                 className="hidden"
               />
             </label>
 
             <button
-              onClick={handleExport}
-              className="px-3 py-2 bg-purple-600 hover:bg-purple-500 rounded-lg text-sm font-medium"
+              onClick={handleExportJSON}
+              className="px-3 py-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg text-sm"
             >
               Export JSON
+            </button>
+
+            <button
+              onClick={handleExportPNG}
+              className="px-3 py-2 bg-purple-600 hover:bg-purple-500 rounded-lg text-sm font-medium"
+            >
+              Export PNG
             </button>
           </div>
         </header>
