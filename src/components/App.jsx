@@ -122,20 +122,14 @@ export default function App() {
     switch (activeTab) {
       case 'basics':
         return (
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr,200px] gap-6">
-            <BasicsForm
-              basics={basics}
-              updateBasics={updateBasics}
-              onGenerate={handleGenerateDescription}
-              isLoading={loading.description}
-            />
-            <div className="lg:order-first">
-              <ImageUpload
-                imageDataUrl={imageDataUrl}
-                onImageChange={setImage}
-              />
-            </div>
-          </div>
+          <BasicsForm
+            basics={basics}
+            updateBasics={updateBasics}
+            onGenerate={handleGenerateDescription}
+            isLoading={loading.description}
+            imageDataUrl={imageDataUrl}
+            onImageChange={setImage}
+          />
         );
 
       case 'description':
