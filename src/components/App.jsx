@@ -13,7 +13,6 @@ import AltGreetingsEditor from './AltGreetingsEditor';
 import AdvancedOptions from './AdvancedOptions';
 import AISettings from './AISettings';
 import GeneratingOverlay from './GeneratingOverlay';
-import ImageUpload from './ImageUpload';
 
 /**
  * Tab configuration
