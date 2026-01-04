@@ -26,6 +26,7 @@ const emptyCard = {
  * Default basics (input form) state
  */
 const emptyBasics = {
+  cardType: 'character', // 'character' or 'narrator'
   name: '',
   title: '',
   age: '',

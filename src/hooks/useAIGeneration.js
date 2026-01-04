@@ -115,7 +115,8 @@ export function useAIGeneration(cardActions) {
     try {
       // Use provided hint, or current first_mes content as hint
       const hintText = hint !== null ? hint : card.first_mes;
-      let prompt = firstMessagePrompt(card.description, card.scenario, hintText);
+      const cardType = basics.cardType || 'character';
+      let prompt = firstMessagePrompt(card.description, card.scenario, hintText, cardType);
       if (tone) {
         prompt = applyTone(prompt, tone);
       }
@@ -129,7 +130,7 @@ export function useAIGeneration(cardActions) {
     } finally {
       setLoadingState('firstMessage', false);
     }
-  }, [card.description, card.scenario, card.first_mes, updateCard, setLoadingState, handleProgress]);
+  }, [card.description, card.scenario, card.first_mes, basics.cardType, updateCard, setLoadingState, handleProgress]);
 
   /**
    * Generate an alternate greeting
@@ -146,10 +147,12 @@ export function useAIGeneration(cardActions) {
     setError(null);
 
     try {
+      const cardType = basics.cardType || 'character';
       let prompt = altGreetingPrompt(
         card.description,
         card.alternate_greetings,
-        scenarioHint
+        scenarioHint,
+        cardType
       );
       if (tone) {
         prompt = applyTone(prompt, tone);
@@ -164,7 +167,7 @@ export function useAIGeneration(cardActions) {
     } finally {
       setLoadingState('altGreeting', false);
     }
-  }, [card.description, card.alternate_greetings, addAltGreeting, setLoadingState, handleProgress]);
+  }, [card.description, card.alternate_greetings, basics.cardType, addAltGreeting, setLoadingState, handleProgress]);
 
   /**
    * Generate tags from description
@@ -179,7 +182,8 @@ export function useAIGeneration(cardActions) {
     setError(null);
 
     try {
-      const prompt = tagsPrompt(card.description);
+      const cardType = basics.cardType || 'character';
+      const prompt = tagsPrompt(card.description, cardType);
       const result = await callAIStream(prompt, handleProgress);
 
       // Parse comma-separated tags
@@ -196,7 +200,7 @@ export function useAIGeneration(cardActions) {
     } finally {
       setLoadingState('tags', false);
     }
-  }, [card.description, setTags, setLoadingState, handleProgress]);
+  }, [card.description, basics.cardType, setTags, setLoadingState, handleProgress]);
 
   /**
    * Clear error

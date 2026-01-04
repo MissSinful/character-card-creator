@@ -1,13 +1,38 @@
 import React, { useRef } from 'react';
-import { Sparkles, Upload, X, Image as ImageIcon } from 'lucide-react';
+import { Sparkles, Upload, X, Image as ImageIcon, User, Globe } from 'lucide-react';
 import { loadImageAsDataURL } from '../lib/png';
 
+// Placeholder text for different card types
+const PLACEHOLDERS = {
+  character: {
+    name: 'e.g., Adrian Blackwood',
+    title: 'e.g., CEO, Knight',
+    age: 'e.g., 32, Late 20s',
+    keyTraits: 'e.g.:\n- Cold and professional\n- Secretly protective\n- Dry sense of humor',
+    appearance: 'e.g.:\n- Tall, dark hair, silver eyes\n- Always wears suits\n- Scar on left hand',
+    scenario: 'The setting and situation...\nUse {{user}} for the player',
+    relationship: 'e.g., Boss, Childhood friend, Rival',
+    notes: 'Backstory, themes, behaviors, writing style...',
+  },
+  narrator: {
+    name: 'e.g., The Narrator, Eldoria, Zombie Survival',
+    title: 'e.g., Dark Fantasy, Sci-Fi Horror',
+    keyTraits: 'e.g.:\n- Atmospheric and descriptive\n- Morally gray choices\n- NPCs have their own goals\n- Actions have consequences',
+    appearance: 'e.g.:\n- Medieval fantasy setting\n- Magic is rare and costly\n- Dangerous wilderness\n- Political intrigue in cities',
+    scenario: 'The world premise...\n{{user}} is a traveler who...',
+    relationship: 'e.g., Adventurer, Survivor, Chosen One',
+    notes: 'World lore, factions, recurring NPCs, tone...',
+  },
+};
+
 /**
- * Form for inputting basic character information
+ * Form for inputting basic character/narrator information
  * This data feeds into AI generation
  */
 export default function BasicsForm({ basics, updateBasics, onGenerate, isLoading, imageDataUrl, onImageChange }) {
   const imageInputRef = useRef(null);
+  const isNarrator = basics.cardType === 'narrator';
+  const ph = PLACEHOLDERS[basics.cardType] || PLACEHOLDERS.character;
 
   const handleChange = (field) => (e) => {
     updateBasics(field, e.target.value);
@@ -42,6 +67,34 @@ export default function BasicsForm({ basics, updateBasics, onGenerate, isLoading
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Card Type Selector */}
+      <div className="flex gap-2 p-1 bg-zinc-800 rounded-lg w-fit">
+        <button
+          type="button"
+          onClick={() => updateBasics('cardType', 'character')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            !isNarrator
+              ? 'bg-purple-600 text-white'
+              : 'text-zinc-400 hover:text-zinc-200'
+          }`}
+        >
+          <User className="w-4 h-4" />
+          Character
+        </button>
+        <button
+          type="button"
+          onClick={() => updateBasics('cardType', 'narrator')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            isNarrator
+              ? 'bg-purple-600 text-white'
+              : 'text-zinc-400 hover:text-zinc-200'
+          }`}
+        >
+          <Globe className="w-4 h-4" />
+          World / Narrator
+        </button>
+      </div>
+
       {/* Top section: Image + Basic fields */}
       <div className="flex gap-4">
         {/* Image upload - compact */}
@@ -51,7 +104,7 @@ export default function BasicsForm({ basics, updateBasics, onGenerate, isLoading
         >
           {imageDataUrl ? (
             <>
-              <img src={imageDataUrl} alt="Character" className="w-full h-full object-cover" />
+              <img src={imageDataUrl} alt="Card" className="w-full h-full object-cover" />
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); onImageChange(null); }}
@@ -75,128 +128,132 @@ export default function BasicsForm({ basics, updateBasics, onGenerate, isLoading
           />
         </div>
 
-        {/* Name, Title, Age, Gender */}
+        {/* Name, Title, Age, Gender - adapts for narrator mode */}
         <div className="flex-1 grid grid-cols-2 gap-3">
           <div>
             <label className="block text-sm font-medium text-zinc-300 mb-1">
-              Name <span className="text-red-400">*</span>
+              {isNarrator ? 'World / Card Name' : 'Name'} <span className="text-red-400">*</span>
             </label>
             <input
               type="text"
               value={basics.name}
               onChange={handleChange('name')}
-              placeholder="e.g., Adrian Blackwood"
+              placeholder={ph.name}
               className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-zinc-100 placeholder-zinc-500 focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
             />
           </div>
           <div>
             <label className="block text-sm font-medium text-zinc-300 mb-1">
-              Title / Role
+              {isNarrator ? 'Genre / Setting Type' : 'Title / Role'}
             </label>
             <input
               type="text"
               value={basics.title}
               onChange={handleChange('title')}
-              placeholder="e.g., CEO, Knight"
+              placeholder={ph.title}
               className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-zinc-100 placeholder-zinc-500 focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-1">
-              Age
-            </label>
-            <input
-              type="text"
-              value={basics.age}
-              onChange={handleChange('age')}
-              placeholder="e.g., 32, Late 20s"
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-zinc-100 placeholder-zinc-500 focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-1">
-              Gender
-            </label>
-            <select
-              value={basics.gender}
-              onChange={handleChange('gender')}
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-zinc-100 focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
-            >
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
-              <option value="Non-binary">Non-binary</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
+          {!isNarrator && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-zinc-300 mb-1">
+                  Age
+                </label>
+                <input
+                  type="text"
+                  value={basics.age}
+                  onChange={handleChange('age')}
+                  placeholder={ph.age}
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-zinc-100 placeholder-zinc-500 focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-zinc-300 mb-1">
+                  Gender
+                </label>
+                <select
+                  value={basics.gender}
+                  onChange={handleChange('gender')}
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-zinc-100 focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                >
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Non-binary">Non-binary</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
-      {/* Personality and Appearance - side by side */}
+      {/* Traits and Setting - side by side */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-zinc-300 mb-1">
-            Key Personality Traits <span className="text-red-400">*</span>
+            {isNarrator ? 'Narrator Style / World Rules' : 'Key Personality Traits'} <span className="text-red-400">*</span>
           </label>
           <textarea
             value={basics.keyTraits}
             onChange={handleChange('keyTraits')}
-            placeholder="e.g.:&#10;- Cold and professional&#10;- Secretly protective&#10;- Dry sense of humor"
+            placeholder={ph.keyTraits}
             rows={4}
             className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-zinc-100 placeholder-zinc-500 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 font-mono text-sm"
           />
         </div>
         <div>
           <label className="block text-sm font-medium text-zinc-300 mb-1">
-            Appearance Notes
+            {isNarrator ? 'World Details / Setting' : 'Appearance Notes'}
           </label>
           <textarea
             value={basics.appearanceNotes}
             onChange={handleChange('appearanceNotes')}
-            placeholder="e.g.:&#10;- Tall, dark hair, silver eyes&#10;- Always wears suits&#10;- Scar on left hand"
+            placeholder={ph.appearance}
             rows={4}
             className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-zinc-100 placeholder-zinc-500 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 font-mono text-sm"
           />
         </div>
       </div>
 
-      {/* Scenario and Relationship - side by side */}
+      {/* Scenario and Notes - side by side */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-zinc-300 mb-1">
-            Scenario / Premise
+            {isNarrator ? 'World Premise / Hook' : 'Scenario / Premise'}
           </label>
           <textarea
             value={basics.scenarioPremise}
             onChange={handleChange('scenarioPremise')}
-            placeholder="The setting and situation...&#10;Use {{user}} for the player"
+            placeholder={ph.scenario}
             rows={3}
             className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-zinc-100 placeholder-zinc-500 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 font-mono text-sm"
           />
         </div>
         <div>
           <label className="block text-sm font-medium text-zinc-300 mb-1">
-            Additional Notes / Themes
+            {isNarrator ? 'Lore / NPCs / Factions' : 'Additional Notes / Themes'}
           </label>
           <textarea
             value={basics.additionalNotes}
             onChange={handleChange('additionalNotes')}
-            placeholder="Backstory, themes, behaviors, writing style..."
+            placeholder={ph.notes}
             rows={3}
             className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-zinc-100 placeholder-zinc-500 focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
           />
         </div>
       </div>
 
-      {/* Relationship to User */}
+      {/* User Role */}
       <div>
         <label className="block text-sm font-medium text-zinc-300 mb-1">
-          Relationship to {"{{user}}"}
+          {isNarrator ? '{{user}}\'s Role in the World' : 'Relationship to {{user}}'}
         </label>
         <input
           type="text"
           value={basics.relationshipToUser}
           onChange={handleChange('relationshipToUser')}
-          placeholder="e.g., Boss, Childhood friend, Rival, Arranged marriage partner"
+          placeholder={ph.relationship}
           className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-zinc-100 placeholder-zinc-500 focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
         />
       </div>
@@ -211,18 +268,18 @@ export default function BasicsForm({ basics, updateBasics, onGenerate, isLoading
           {isLoading ? (
             <>
               <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              Generating Description...
+              {isNarrator ? 'Generating World...' : 'Generating Description...'}
             </>
           ) : (
             <>
               <Sparkles className="w-5 h-5" />
-              Generate Description
+              {isNarrator ? 'Generate World Card' : 'Generate Description'}
             </>
           )}
         </button>
         {!isValid && (
           <p className="text-center text-sm text-zinc-500 mt-2">
-            Fill in Name and Key Traits to generate
+            Fill in {isNarrator ? 'World Name and Style/Rules' : 'Name and Key Traits'} to generate
           </p>
         )}
       </div>
